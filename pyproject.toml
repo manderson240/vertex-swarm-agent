@@ -1,0 +1,14 @@
+[project]
+name = "vertex-swarm-agent"
+version = "0.1.0"
+description = "Leaderless Byzantine-Fault-Tolerant & HIHO Manifold Consensus Node for The Vertex Swarm Challenge"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8.0.0"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
