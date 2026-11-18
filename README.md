@@ -10,3 +10,12 @@
 ```bash
 uv run pytest -q
 ```
+
+## V-Model Empirical Verification ($N=100$)
+- **Pytest Suite**: `3/3` BFT + FoxMQ firewall tests passing (`0.01s`)
+- **Cohen's $d$**: `2.1285` | **Wald SPRT**: `+101.96` (`accept_h1`)
+- **Median Verifier Latency**: `0.0067 ms` p50
+
+## Hackathon Deliverables
+- **Submission Guide**: [`BUIDL_SUBMISSION.md`](BUIDL_SUBMISSION.md)
+- **2K QHD 6-Scene Walkthrough Video**: [`docs/vertex_swarm_demo.mp4`](docs/vertex_swarm_demo.mp4) (`2560×1440`, generated via `scripts/generate_pitch_video.py`)
