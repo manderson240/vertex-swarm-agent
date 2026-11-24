@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import html
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -22,7 +23,29 @@ WIDTH = 2560
 HEIGHT = 1440
 CHROME_CAPTURE_HEIGHT = 1527
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CHROME_BIN = "/home/mike-anderson/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell"
+
+
+def _resolve_chrome_bin() -> str:
+    env_bin = os.getenv("CHROME_HEADLESS_BIN")
+    if env_bin and Path(env_bin).is_file():
+        return env_bin
+    candidates = sorted(
+        Path.home().glob(
+            ".cache/ms-playwright/chromium_headless_shell-*/"
+            "chrome-headless-shell-linux64/chrome-headless-shell"
+        )
+    )
+    if candidates:
+        return str(candidates[-1])
+    found = shutil.which("chrome-headless-shell")
+    if found:
+        return found
+    raise FileNotFoundError(
+        "Playwright chrome-headless-shell not found; set CHROME_HEADLESS_BIN"
+    )
+
+
+CHROME_BIN = _resolve_chrome_bin()
 
 sys.path.insert(0, str(REPO_ROOT / "src"))
 from vertex_swarm_spoke import FoxMQGossipVerifier, ManifoldBFTCoordinator, PeerVote  # noqa: E402
@@ -420,7 +443,7 @@ pre { padding:16px 22px; font-family:"JetBrains Mono","DejaVu Sans Mono",monospa
 
 
 def _synthesize_audio(text: str, output_mp3: Path) -> None:
-    pocket_bin = shutil.which("pocket-tts") or "/home/mike-anderson/.local/bin/pocket-tts"
+    pocket_bin = shutil.which("pocket-tts") or str(Path.home() / ".local" / "bin" / "pocket-tts")
     sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s.strip()]
     with tempfile.TemporaryDirectory() as td:
         wavs: list[Path] = []
