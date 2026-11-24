@@ -1,120 +1,104 @@
-# DoraHacks BUIDL Submission Guide: Vertex Swarm Agent
+# DoraHacks BUIDL Submission: Vertex Swarm Agent
 
-**Competition**: The Vertex Swarm Challenge 2026 (DoraHacks)  
 **Track**: Leaderless P2P Agent Swarms  
-**Prize Pool**: `$27,000 Pool`  
 **GitHub Repo**: `https://github.com/manderson240/vertex-swarm-agent`  
-**Demo Video (2K QHD)**: [`docs/vertex_swarm_demo.mp4`](docs/vertex_swarm_demo.mp4) (6-Scene Full-Code Walkthrough)  
-**Contact Info**: `manderson240@gmail.com` | Telegram: `@manderson240`
+**Demo Video**: [`docs/vertex_swarm_demo.mp4`](docs/vertex_swarm_demo.mp4)  
+**Contact Info**: Telegram `@manderson240`, Discord `miked238725`  
 
 ---
 
-## Copy-Paste Form Fields for DoraHacks
+## Form Fields for DoraHacks
 
 ### 1. Project Name
 ```text
 Vertex Swarm Agent
 ```
 
-### 2. Tagline (Under 120 characters)
+### 2. Brief Description (Under 120 characters)
 ```text
 Leaderless coordinate-wise median BFT consensus and HMAC/monotonic P2P FoxMQ firewall for multi-agent swarms.
 ```
 
 ### 3. Tags
-`Swarms`, `P2P`, `Byzantine Fault Tolerance`, `DePIN`, `Edge AI`, `Zero-Cloud`, `FoxMQ`, `HIHO Consensus`
+`Swarms`, `P2P`, `Byzantine Fault Tolerance`, `DePIN`, `Edge AI`, `Zero-Cloud`, `FoxMQ`, `Consensus`
 
 ---
 
-## Detailed Project Description
+## Project Description
 
-### The Problem: Coordinator Bottlenecks & Byzantine Poisoning in P2P Swarms
-Autonomous robot, drone, and distributed edge-AI agent swarms operating beyond reliable cloud connectivity fail under two fundamental failure modes:
-1. **Single-Point-of-Failure Coordinators**: Cloud orchestration halts the entire swarm when backhaul partitions occur.
-2. **Byzantine Mean Poisoning & Replay Spoofing**: Naive arithmetic averaging over peer embeddings allows a single malicious node submitting extreme outliers (or replaying old gossip frames) to hijack global swarm consensus.
+### Why I built this
+Autonomous robot, drone, and edge-AI swarms operating without reliable cloud connectivity fail under two common failure modes:
+1. **Single-point-of-failure coordinators**: Centralized orchestration halts the swarm when backhaul partitions occur.
+2. **Arithmetic mean poisoning and replay spoofing**: Plain averaging over peer vectors lets a single malicious peer submitting an extreme vector corrupt global consensus, and unauthenticated P2P packets are trivial to replay or spoof.
 
-### The Solution: Riemannian Median BFT + HIHO Stability + FoxMQ Firewall
-Implemented cleanly in `src/vertex_swarm_spoke/bft_swarm.py` with zero external runtime dependencies:
-1. **Coordinate-Wise Median Riemannian BFT (`ManifoldBFTCoordinator`)**: Computes breakdown-resistant coordinate-wise medians over `256D` peer semantic vectors, isolates compromised peers violating divergence tolerance or $\text{HIHO} = 0.50 \pm 0.12$ stability bounds (`disqualified_nodes`), and requires a $\ge 2/3$ (`0.67`) honest supermajority before committing a SHA-256 `aggregate_manifold_hash`.
-2. **Leaderless FoxMQ Gossip Firewall (`FoxMQGossipVerifier`)**: Authenticates peer frames via constant-time `hmac.compare_digest` HMAC-SHA256 verification paired with strict per-sender monotonic sequence numbers, dropping replayed or tampered control packets in **0.0067 ms median latency**.
+### How it works
+Implemented in `src/vertex_swarm_spoke/bft_swarm.py` using only the Python standard library:
+1. **Coordinate-wise median BFT (`ManifoldBFTCoordinator`)**: Filters votes whose stability score is within `0.50 +/- 0.12` (configured via `hiho_target=0.50, hiho_tolerance=0.12`), computes the coordinate-wise median vector centroid, disqualifies peers with wrong action hashes, stability drift, or RMS divergence `> 0.35`, and requires an honest supermajority (`>= 0.67`) before committing a 16-hex SHA-256 `aggregate_manifold_hash`. Because coordinate-wise medians have a breakdown point just under 50% (combined here with a 2/3 honest quorum requirement), up to one-third faulty peers cannot pull the centroid arbitrarily far.
+2. **Leaderless gossip verifier (`FoxMQGossipVerifier`)**: Authenticates P2P frames with constant-time `hmac.compare_digest` HMAC-SHA256 verification and strict per-sender monotonic sequence numbers, dropping replayed nonces and tampered frames in microseconds.
 
 ---
 
-## System Architecture & Interaction Flow
+## Architecture and Flow
 
 ```mermaid
 flowchart TD
     Peers["Leaderless P2P Swarm Peers (N nodes)"] -->|"Signed GossipFrame (sender, nonce, HMAC)"| FoxMQ["FoxMQGossipVerifier.verify_frame()"]
-    FoxMQ -->|"seq_nonce <= last_seen or bad HMAC"| Drop["DROP Frame (Replay / Tamper Blocked)"]
-    FoxMQ -->|"Valid & Monotonic"| BFT["ManifoldBFTCoordinator.evaluate_votes()"]
-    subgraph Consensus["HIHO + Coordinate-Wise Median BFT (< 0.01ms)"]
-        HIHO["Filter HIHO Envelope (0.50 +- 0.12)"]
+    FoxMQ -->|"seq_nonce <= last_seen or bad HMAC"| Drop["DROP Frame (Replay or Tamper Blocked)"]
+    FoxMQ -->|"Authentic and Monotonic"| BFT["ManifoldBFTCoordinator.evaluate_votes()"]
+    subgraph Consensus["Median BFT and Stability Filter (bft_swarm.py)"]
+        Stab["Filter Stability Envelope (0.50 +/- 0.12)"]
         Median["Coordinate-Wise Vector Median Centroid"]
-        Disq["Disqualify RMS Divergence & Hash Mismatch Peers"]
+        Disq["Disqualify RMS Divergence and Hash Mismatch"]
         Quorum["Supermajority Gate (honest / total >= 0.67)"]
     end
-    BFT --> HIHO --> Median --> Disq --> Quorum
+    BFT --> Stab --> Median --> Disq --> Quorum
     Quorum -->|"Quorum >= 2/3"| Certified["BFTVerdict(consensus_reached=True, agg_hash)"]
-    Quorum -->|"Quorum < 2/3"| Halt["SAFE HALT (No Corrupted Action Committed)"]
+    Quorum -->|"Quorum < 2/3"| Halt["SAFE HALT (No Action Committed)"]
 ```
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Peer as Edge Swarm Node
+    actor Peer as Swarm Peer Node
     participant FoxMQ as FoxMQGossipVerifier
     participant BFT as ManifoldBFTCoordinator
 
     Peer->>FoxMQ: Broadcast GossipFrame(sender_id, seq_nonce, payload, hmac_hex)
-    FoxMQ->>FoxMQ: Check seq_nonce > last_nonce & hmac.compare_digest()
+    FoxMQ->>FoxMQ: Check seq_nonce > last_nonce and hmac.compare_digest()
     alt Replay Nonce or Invalid HMAC
         FoxMQ-->>Peer: DROP (replay_nonce / invalid_hmac_signature)
-    else Frame Authentic
+    else Authentic Frame
         FoxMQ->>BFT: Forward PeerVote(manifold_vector, stability_score)
-        BFT->>BFT: Compute coordinate-wise median & RMS distance per peer
-        BFT->>BFT: Isolate Byzantine / HIHO-drifted nodes & verify >= 2/3 quorum
+        BFT->>BFT: Compute coordinate-wise median and RMS distance per peer
+        BFT->>BFT: Disqualify outlier / unstable nodes and check >= 2/3 quorum
         BFT-->>Peer: Emit BFTVerdict(consensus_reached, disqualified_nodes, agg_hash)
     end
 ```
 
 ---
 
-## Competitive Comparison & Edge Resilience
+## Verification and Benchmark
 
-| Metric | Naive Cloud / Mean Aggregator | Vertex Swarm Agent (BFT + FoxMQ) | Advantage |
-|---|:---:|:---:|:---:|
-| **Central Coordinator Required** | Mandatory (SPOF) | **None (100% Leaderless P2P)** | **Partition resilient** |
-| **Byzantine Breakdown Point** | `0%` (1 outlier ruins mean) | **Up to `< 33%` (< 1/3 peers)** | **Mathematically robust** |
-| **Replay / Spoof Defense** | Unauthenticated JSON | **HMAC-SHA256 + Monotonic Nonce** | **0.0067 ms p50 drop** |
-| **Runtime Memory / Deps** | Heavy orchestration SDKs | **Pure Python Stdlib (0 external deps)** | **Edge / drone ready** |
-
----
-
-## Empirical V-Model Verification ($N=100$ Trials)
-
-- **Unit Test Suite**: `3/3` pytest assertions passing in `0.01s` (`tests/test_vertex_swarm_spoke.py`), verifying honest supermajority agreement, disqualification of extreme vector outliers and HIHO drift peers, and replay/tampering rejection on `FoxMQGossipVerifier`.
-- **Monte Carlo Cohen's $d$**: `2.1285` ($N=100$).
-- **Wald SPRT Log-Likelihood Ratio**: `+101.96` (`accept_h1` certified).
-- **Median Verifier Latency (p50)**: `0.0067 ms`.
-
----
-
-## How to Verify in 60 Seconds
+- **Unit tests (`tests/test_vertex_swarm_spoke.py`)**: `3/3` passing in `0.01s`, covering honest 5/5 supermajority agreement, disqualification of an extreme vector outlier and an out-of-envelope stability score (`4/6` rejected, `5/6` accepted), and replay/HMAC tampering rejection on `FoxMQGossipVerifier`.
+- **Latency benchmark (`scripts/bench.py`)**: Over 20,000 iterations on my machine using Python stdlib only:
+  - `ManifoldBFTCoordinator.evaluate_votes` (6 peers, 16D vectors): `0.0137 ms` p50, `0.0232 ms` p99
+  - `FoxMQGossipVerifier.verify_frame`: `0.0010 ms` p50, `0.0016 ms` p99
 
 ```bash
 git clone https://github.com/manderson240/vertex-swarm-agent.git
 cd vertex-swarm-agent
 uv sync
 uv run pytest tests/test_vertex_swarm_spoke.py -v
+PYTHONPATH=src uv run python scripts/bench.py
 ```
 
 ---
 
-## Walkthrough Video Chapters (`docs/vertex_swarm_demo.mp4` • 2560×1440 2K QHD)
+## Walkthrough Video Chapters (`docs/vertex_swarm_demo.mp4`, 2560x1440)
 
-1. **Scene 0**: Title Hero — Leaderless BFT Consensus, HIHO `0.50+-0.12`, FoxMQ Firewall & $N=100$ V-Model Metrics
-2. **Scene 1**: Architecture Pipeline & Single-Point Mean Aggregator vs. Sovereign Median BFT Comparison
-3. **Scene 2**: Actual Core Source — `ManifoldBFTCoordinator` (`src/vertex_swarm_spoke/bft_swarm.py`)
-4. **Scene 3**: Actual Security Source — `FoxMQGossipVerifier` HMAC & Nonce Firewall
-5. **Scene 4**: Live Terminal Walkthrough — 2/3 Quorum Consensus Certified vs. Byzantine Outlier & Replay Blocked
-6. **Scene 5**: Full 3/3 Pytest Suite Execution, Empirical $N=100$ Metrics & 1-Command Verification
+1. Scene 0: Title card, leaderless BFT consensus, and FoxMQ firewall overview
+2. Scene 1: Single coordinator vs median BFT comparison
+3. Scene 2: Source walkthrough: `ManifoldBFTCoordinator` (`src/vertex_swarm_spoke/bft_swarm.py`)
+4. Scene 3: Source walkthrough: `FoxMQGossipVerifier` HMAC and nonce check
+5. Scene 4: Terminal demo: 2/3 quorum certified, outlier and replay blocked
+6. Scene 5: Full 3/3 pytest run and quickstart commands

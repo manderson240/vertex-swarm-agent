@@ -126,7 +126,7 @@ SCENES = [
                     <h3>❌ Cloud Coordinator / Mean Aggregator</h3>
                     <ul>
                         <li><strong>Partition Tolerance:</strong> Total halt if central relay drops</li>
-                        <li><strong>Breakdown Point:</strong> 0% — one malicious vector skews mean</li>
+                        <li><strong>Breakdown Point:</strong> 0%: one malicious vector skews mean</li>
                         <li><strong>Packet Integrity:</strong> Vulnerable to replayed old state frames</li>
                         <li><strong>Dependencies:</strong> Heavy external brokers unsuitable for drones</li>
                     </ul>
@@ -156,12 +156,12 @@ SCENES = [
             <div class="header">
                 <span class="badge">Code Walkthrough • Coordinate-Wise Median BFT</span>
                 <h1>Core Implementation: ManifoldBFTCoordinator</h1>
-                <p class="subtitle">Verbatim source from <code>src/vertex_swarm_spoke/bft_swarm.py</code> (lines 17–132, zero ellipses).</p>
+                <p class="subtitle">Verbatim source from <code>src/vertex_swarm_spoke/bft_swarm.py</code> (lines 17 to 132, zero ellipses).</p>
             </div>
             <div class="code-grid-2">
                 <div class="code-box">
                     <div class="linux-bar">
-                        <span class="linux-tab">bft_swarm.py (Lines 17–72)</span>
+                        <span class="linux-tab">bft_swarm.py (Lines 17 to 72)</span>
                         <div class="linux-controls"><span>_</span><span>□</span><span>✕</span></div>
                     </div>
                     <pre style="font-size:14.2px;line-height:1.28;">{BFT_COORDINATOR_PART1}</pre>
@@ -172,7 +172,7 @@ SCENES = [
                 </div>
                 <div class="code-box">
                     <div class="linux-bar">
-                        <span class="linux-tab">bft_swarm.py (Lines 73–132)</span>
+                        <span class="linux-tab">bft_swarm.py (Lines 73 to 132)</span>
                         <div class="linux-controls"><span>_</span><span>□</span><span>✕</span></div>
                     </div>
                     <pre style="font-size:14.2px;line-height:1.28;">{BFT_COORDINATOR_PART2}</pre>
@@ -196,12 +196,12 @@ SCENES = [
             <div class="header">
                 <span class="badge">Code Walkthrough • Cryptographic Gossip Defense</span>
                 <h1>Peer Packet Firewall: FoxMQGossipVerifier</h1>
-                <p class="subtitle">Verbatim monotonic nonce &amp; constant-time HMAC verification (<code>bft_swarm.py</code> lines 134–169).</p>
+                <p class="subtitle">Verbatim monotonic nonce &amp; constant-time HMAC verification (<code>bft_swarm.py</code> lines 134 to 169).</p>
             </div>
             <div class="grid-2" style="gap:28px;height:980px;">
                 <div class="code-box">
                     <div class="linux-bar">
-                        <span class="linux-tab">bft_swarm.py (Lines 134–169)</span>
+                        <span class="linux-tab">bft_swarm.py (Lines 134 to 169)</span>
                         <div class="linux-controls"><span>_</span><span>□</span><span>✕</span></div>
                     </div>
                     <pre style="font-size:16px;line-height:1.42;">{FOXMQ_VERIFIER_CODE}</pre>
@@ -246,7 +246,7 @@ SCENES = [
             <div class="code-grid-2">
                 <div class="terminal-mini">
                     <div class="linux-bar">
-                        <span class="linux-tab">swarm-node-01 — 4 Honest Edge Nodes</span>
+                        <span class="linux-tab">swarm-node-01: 4 Honest Edge Nodes</span>
                         <div class="linux-controls"><span>_</span><span>□</span><span>✕</span></div>
                     </div>
                     <div class="term-lines" style="font-size:17px;">
@@ -263,7 +263,7 @@ SCENES = [
                 </div>
                 <div class="terminal-mini danger-border">
                     <div class="linux-bar danger-header">
-                        <span class="linux-tab-danger">swarm-node-01 — Byzantine Outlier + Replay</span>
+                        <span class="linux-tab-danger">swarm-node-01: Byzantine Outlier + Replay</span>
                         <div class="linux-controls"><span>_</span><span>□</span><span>✕</span></div>
                     </div>
                     <div class="term-lines" style="font-size:17px;">

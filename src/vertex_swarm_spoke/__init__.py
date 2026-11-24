@@ -1,4 +1,4 @@
-"""Vertex Swarm Agent — Leaderless BFT Manifold Consensus & FoxMQ P2P Gossip."""
+"""Vertex Swarm Agent: Leaderless BFT Manifold Consensus & FoxMQ P2P Gossip."""
 
 from vertex_swarm_spoke.bft_swarm import (
     BFTVerdict,
